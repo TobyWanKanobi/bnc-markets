@@ -19,7 +19,7 @@ class BNCMarketsService:
         if os.path.exists(dest) == False:
             
             print('Downloading: %s' % (url))
-            response = requests.get(url)
+            response = self.__request(url, None)
             
             if response.status_code == 200:
                 open(dest, 'wb').write(response.content)
