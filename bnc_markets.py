@@ -91,7 +91,7 @@ for dl in downloadFiles:
         else:
             print('Checksum incorrect for file %s' % fp)
     
-
-        
-    #z = zipfile.ZipFile(io.BytesIO(downloadzip.content))
-    #z.extractall(symbol_data_folder)"""
+    elif fp.split('.')[-1] == 'zip':
+        print('Unzipping %s' % fp)
+        with zipfile.ZipFile(fp, 'r') as z:
+            z.extractall('/'.join((DOWNLOAD_DIRECTORY, frequency, args.symbol)))
