@@ -1,1 +1,5 @@
-/pycache/*
+.env
+market_data/
+monthlytrades.xml
+dailytrades.xml
+/__pycache__/*
