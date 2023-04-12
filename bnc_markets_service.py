@@ -23,6 +23,9 @@ class BNCMarketsService:
             
             if response.status_code == 200:
                 open(dest, 'wb').write(response.content)
+                return dest
+        
+        return None
                 #print('Checksum For %s = %s' % (file_name, get_checksum(dest, 'sha256')))
 
     def getDailyTrades(self, symbol, start, end):

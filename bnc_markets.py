@@ -1,8 +1,9 @@
-import io, os, sys, argparse, calendar, requests, zipfile, hashlib
+import io, os, sys, argparse, requests, zipfile
 from dotenv import load_dotenv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from bnc_markets_service import BNCMarketsService
+from utils import get_checksum
 
 # Loading environment variables from .env file
 load_dotenv()
@@ -18,38 +19,12 @@ APP_DIRECTORY = os.getcwd()
 DOWNLOAD_DIRECTORY = '/'.join((APP_DIRECTORY, os.getenv('DOWNLOAD_DIRECTORY')))
 DAILY_DIRECTORY = '/'.join((DOWNLOAD_DIRECTORY, 'daily'))
 MONTHLY_DIRECTORY = '/'.join((DOWNLOAD_DIRECTORY, 'monthly'))
+PERFORM_CHECKSUM = os.getenv('PERFORM_CHECKSUM')
 
 BNC_MARKETS_SERVICE = BNCMarketsService(os.getenv('BUCKET_STORAGE_URL'))
 
 sys.stdout.write("Try to download marketdata for %s \n" % args.symbol)
 print('Downloading %s trades between: startdate=%s enddate=%s' % (args.symbol, args.start, args.end))
-
-def get_checksum(filename, hash_function):
-    """Generate checksum for file baed on hash function (MD5 or SHA256).
- 
-    Args:
-        filename (str): Path to file that will have the checksum generated.
-        hash_function (str):  Hash function name - supports MD5 or SHA256
- 
-    Returns:
-        str`: Checksum based on Hash function of choice.
- 
-    Raises:
-        Exception: Invalid hash function is entered.
- 
-    """
-    hash_function = hash_function.lower()
- 
-    with open(filename, "rb") as f:
-        bytes = f.read()  # read file as bytes
-        if hash_function == "md5":
-            readable_hash = hashlib.md5(bytes).hexdigest()
-        elif hash_function == "sha256":
-            readable_hash = hashlib.sha256(bytes).hexdigest()
-        else:
-            Raise("{} is an invalid hash function. Please Enter MD5 or SHA256")
- 
-    return readable_hash
 
 def fetchMarketData():
     
@@ -90,7 +65,7 @@ for dl in downloadFiles:
     dateStr = file_name.split('.')[0][len('%s-trades-' % (args.symbol)):]  # Get date part from filename
     frequency = 'daily'
 
-    if len(dateStr) > 5:
+    if len(dateStr) > 7:
         
         # Create symbol folder if it doesn't exist
         if not os.path.exists('/'.join((DAILY_DIRECTORY, args.symbol))):
@@ -103,9 +78,20 @@ for dl in downloadFiles:
             os.mkdir('/'.join((MONTHLY_DIRECTORY, args.symbol)))
 
     # Download data file if it doesnt't exist locally
-    fp = '/'.join((DOWNLOAD_DIRECTORY, frequency, args.symbol, file_name))  
+    fp = '/'.join((DOWNLOAD_DIRECTORY, frequency, args.symbol, file_name))
 
     BNC_MARKETS_SERVICE.downloadFile(dl, fp)
+
+    if PERFORM_CHECKSUM and fp.split('.')[-1] == 'CHECKSUM':
+        checksumFile = open(fp, "r")
+        checksum = checksumFile.readline().split(' ')[0]
+         
+        if get_checksum(fp.replace('.CHECKSUM', ''), 'SHA256') == checksum:
+            print('Checksum OK for %s' % fp)
+        else:
+            print('Checksum incorrect for file %s' % fp)
+    
+
         
     #z = zipfile.ZipFile(io.BytesIO(downloadzip.content))
     #z.extractall(symbol_data_folder)"""
