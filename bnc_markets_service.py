@@ -1,5 +1,5 @@
 import requests, os
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 from xml.etree import ElementTree
 from xml.etree.ElementTree import ElementTree as ET
 
@@ -19,17 +19,22 @@ class BNCMarketsService:
         if os.path.exists(dest) == False:
             
             print('Downloading: %s' % (url))
-            response = requests.get(url)
+            response = self.__request(url, None)
             
             if response.status_code == 200:
                 open(dest, 'wb').write(response.content)
+                return dest
+        
+        return None
                 #print('Checksum For %s = %s' % (file_name, get_checksum(dest, 'sha256')))
 
     def getDailyTrades(self, symbol, start, end):
+
+        print('Requesting daily trades')
+
         t = start - timedelta(days=1)
         marker = 'data/spot/daily/trades/%s/%s-trades-%s.zip.CHECKSUM' % (symbol, symbol, t.strftime('%Y-%m-%d'))
 
-        print('Request daily trades: %s' % self.baseUrl)
         response = self.__request(self.baseUrl % ('data/spot/daily/trades/%s/&marker=%s' % (symbol, marker)), None)
 
         xmlDataFiles = ET(ElementTree.fromstring(response.content))
@@ -49,9 +54,9 @@ class BNCMarketsService:
         return fl
 
     # Returns a list of monthly trades
-    def getTradeFileList(self, symbol, start, end):
+    def getMonthlyTrades(self, symbol, start, end):
 
-        print('Request monthly trades: %s' % self.baseUrl)
+        print('Requesting monthly trades')
         response = self.__request(self.baseUrl % ('data/spot/monthly/trades/%s/&marker=' % (symbol)), None)
 
         xmlDataFiles = ET(ElementTree.fromstring(response.content))
